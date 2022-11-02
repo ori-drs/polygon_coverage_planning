@@ -197,7 +197,12 @@ void PolygonPlannerBase::getParametersFromRos() {
 
 void PolygonPlannerBase::solve(const Point_2& start, const Point_2& goal) {
   ROS_INFO_STREAM("Start solving.");
+
+  path_length_ = -1;
+  path_time_ = -1;
+
   if ((planning_complete_ = solvePlanner(start, goal))) {
+    path_length_ = computeEuclideanPathCost(solution_);
     ROS_INFO_STREAM("Finished plan."
                     << std::endl
                     << "Optimization Criterion: "
@@ -207,13 +212,14 @@ void PolygonPlannerBase::solve(const Point_2& start, const Point_2& goal) {
                     << "Start point: " << start << std::endl
                     << "Goal point: " << goal << std::endl
                     << "Altitude: " << altitude_.value() << " [m]" << std::endl
-                    << "Path length: " << computeEuclideanPathCost(solution_)
+                    << "Path length: " << path_length_
                     << " [m]");
-    if (v_max_.has_value() && a_max_.has_value())
-      ROS_INFO_STREAM("Path time: "
-                      << computeVelocityRampPathCost(solution_, v_max_.value(),
-                                                     a_max_.value())
-                      << " [s]");
+    if (v_max_.has_value() && a_max_.has_value()) {
+        path_time_ = computeVelocityRampPathCost(solution_, v_max_.value(), a_max_.value());
+        ROS_INFO_STREAM("Path time: "
+                                << path_time_
+                                << " [s]");
+    }
 
     // Publishing the plan if requested
     if (publish_plan_on_planning_complete_) {
@@ -366,9 +372,15 @@ bool PolygonPlannerBase::planPathCallback(
   if (altitude_.has_value()) {
     msgMultiDofJointTrajectoryFromPath(solution_, altitude_.value(),
                                        &response.sampled_plan);
+    poseArrayMsgFromPath(solution_, altitude_.value(), global_frame_id_, &response.path);
   } else {
     ROS_WARN("Cannot plan path. Altitude not set.");
   }
+
+  response.number_of_waypoints = solution_.size();
+  response.path_length = path_length_;
+  response.path_time = path_time_;
+
   response.success = planning_complete_;
   return true;
 }

@@ -6,3 +6,7 @@ geometry_msgs/PoseStamped goal_pose #start pose for the planner
 bool success
 # Either contains a polynomial trajectory:
 trajectory_msgs/MultiDOFJointTrajectory sampled_plan
+uint64 number_of_waypoints  # Number of waypoints
+float64 path_length  # Euclidean path length
+float64 path_time    # Time taken to cover path given v_max and a_max, assuming these are provided. -1 otherwise
+geometry_msgs/PoseArray path  # Path markers, use sampled_plan to get timing

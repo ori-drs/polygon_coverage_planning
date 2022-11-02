@@ -61,6 +61,8 @@ class PolygonPlannerBase {
 
   // The solution waypoints for a given start and goal.
   std::vector<Point_2> solution_;
+  double path_length_{-1};
+  double path_time_{-1};
 
   // Parameters
   std::optional<PolygonWithHoles> polygon_;
